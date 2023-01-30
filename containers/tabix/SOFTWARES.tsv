@@ -1,0 +1,2 @@
+#software	version	source	license	citation
+tabix	1.9	bioconda	Apache 2	Heng Li, Tabix: fast retrieval of sequence features from generic TAB-delimited files, Bioinformatics, Volume 27, Issue 5, 1 March 2011, Pages 718–719, https://doi.org/10.1093/bioinformatics/btq671

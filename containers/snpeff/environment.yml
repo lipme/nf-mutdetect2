@@ -1,0 +1,7 @@
+name: snpeff
+channels:
+  - bioconda
+dependencies:
+  - snpeff=5.1
+  - tabix=1.11
+
