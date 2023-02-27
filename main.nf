@@ -6,8 +6,8 @@ include { SAMTOOLS_mpileupRecall;SAMTOOLS_mpileupRecall as SAMTOOLS_mpileupRecal
 include { VARSCAN_mpileup2snp;VARSCAN_mpileup2indel;VARSCAN_mpileup2cns;VARSCAN_mpileup2cns as VARSCAN_mpileup2cnsWT } from "./modules/software/varscan/main.nf"
 include { VCFTOOLS_excludePostions;VCFTOOLS_convertToTsv as VCFTOOLS_convertToTsvRaw; VCFTOOLS_convertToTsv as VCFTOOLS_convertToTsvNoWT; VCFTOOLS_convertToTsv as VCFTOOLS_convertToTsvNoWTAnn } from "./modules/software/vcftools/main.nf"
 include { SNPEFF_builddb;SNPEFF_eff; SNPEFF_eff as SNPEFF_effWT} from "./modules/software/snpeff/main.nf"
-include { BCFTOOLS_stats as BCFTOOLS_stats_WT;BCFTOOLS_stats as BCFTOOLS_stats_noWT; BCFTOOLS_stats as BCFTOOLS_stats_noWT_ANNfilter; BCFTOOLS_stats as BCFTOOLS_stats_raw;BCFTOOLS_getDeletions;BCFTOOLS_snpeff_exclude; BCFTOOLS_merge as BCFTOOLS_mergeRawMutants; BCFTOOLS_merge as BCFTOOLS_mergeRawWT} from "./modules/software/bcftools/main.nf"
-include {UTILS_publishANNFilterSnpEff;UTILS_publishNoWTSnpEff;UTILS_publishRawSnpEff;UTILS_publishRawSnpEff as UTILS_publishRawSnpEffWT;UTILS_concatvcf;UTILS_countSnps as UTILS_countWTSnps;UTILS_countSnps as  UTILS_countMUTANTSnps;  UTILS_getSnpPositions as UTILS_getMUTANTSnpPositions;UTILS_getSnpPositions as UTILS_getWTSnpPositions; UTILS_genomeSize; UTILS_libSize; UTILS_rawaln; UTILS_filterTransitions; UTILS_summary;UTILS_reformatTrimmomaticSummary} from "./modules/software/utils/main.nf"
+include { BCFTOOLS_stats as BCFTOOLS_stats_WT;BCFTOOLS_stats as BCFTOOLS_stats_noWT; BCFTOOLS_stats as BCFTOOLS_stats_noWT_ANNfilter; BCFTOOLS_stats as BCFTOOLS_stats_raw;BCFTOOLS_getDeletions;BCFTOOLS_snpeff_exclude; BCFTOOLS_merge as BCFTOOLS_mergeRawMutants; BCFTOOLS_merge as BCFTOOLS_mergeRawWT; BCFTOOLS_norm as BCFTOOLS_normRawMutants; BCFTOOLS_norm as BCFTOOLS_normRawWT} from "./modules/software/bcftools/main.nf"
+include { UTILS_publishANNFilterSnpEff;UTILS_publishNoWTSnpEff;UTILS_publishRawSnpEff;UTILS_publishRawSnpEff as UTILS_publishRawSnpEffWT;UTILS_concatvcf;UTILS_countSnps as UTILS_countWTSnps;UTILS_countSnps as  UTILS_countMUTANTSnps;  UTILS_getSnpPositions as UTILS_getMUTANTSnpPositions;UTILS_getSnpPositions as UTILS_getWTSnpPositions; UTILS_genomeSize; UTILS_libSize; UTILS_rawaln; UTILS_summary;UTILS_reformatTrimmomaticSummary} from "./modules/software/utils/main.nf"
 
 workflow {
 Utils.assertFileExists('design',params.design)
@@ -48,19 +48,23 @@ sample_ch = Channel
 	
 	// SNP RECALL ON WT
 	wtsample_ch = vcf_ch.filter {it.get(2) == params.wt_genotype}
-	wt_snp_positions = UTILS_getWTSnpPositions(wtsample_ch.map{ t -> t.get(1)}.flatten().collect(),'WT').collect()
+	wt_snp_positions = UTILS_getWTSnpPositions(wtsample_ch.map{ t -> t.get(1)}.flatten().collect(),'WT', params.min_line_wt_position).collect()
 	mpileup_wt_ch = SAMTOOLS_mpileupRecallWT(wt_snp_positions,refseq_ch,bam_ch.filter {it.get(2) == params.wt_genotype}.groupTuple(by:[3]))
 	cns_wt_ch = VARSCAN_mpileup2cnsWT(mpileup_wt_ch)
-	merged_wt_vcf = BCFTOOLS_mergeRawWT(cns_wt_ch.collect(),'WT','raw')
+	merged_raw_wt_vcf = BCFTOOLS_mergeRawWT(cns_wt_ch.collect(), 'WT','raw')
+	merged_wt_vcf = BCFTOOLS_normRawWT(merged_raw_wt_vcf,refseq_ch,'WT')
+	
+	
 	vcfSnpeff_wt_ch = SNPEFF_effWT(snpeffdb_ch,merged_wt_vcf.collect())
 	UTILS_publishRawSnpEffWT(vcfSnpeff_wt_ch)
-	
+
 	// SNP RECALL ON MUTANTS
 	mutantsample_ch = vcf_ch.filter {it.get(2) != params.wt_genotype}
-	mutant_snp_positions = UTILS_getMUTANTSnpPositions(mutantsample_ch.map{ t -> t.get(1)}.flatten().collect(),'MUTANT').collect()
+	mutant_snp_positions = UTILS_getMUTANTSnpPositions(mutantsample_ch.map{ t -> t.get(1)}.flatten().collect(),'MUTANT',params.min_line_mutant_position).collect()
 	mpileup_mutants_ch = SAMTOOLS_mpileupRecall(mutant_snp_positions,refseq_ch,bam_ch.filter {it.get(2) != params.wt_genotype}.groupTuple(by:[3]))
 	cns_mutants_ch = VARSCAN_mpileup2cns(mpileup_mutants_ch)
-	merged_mutants_vcf = BCFTOOLS_mergeRawMutants(cns_mutants_ch.collect(),'MUTANTS','raw')
+	merged_raw_mutants_vcf = BCFTOOLS_mergeRawMutants(cns_mutants_ch.collect(),'MUTANTS','raw')
+	merged_mutants_vcf = BCFTOOLS_normRawMutants(merged_raw_mutants_vcf,refseq_ch,'MUTANTS')
 	vcfSnpeff_mutants_ch = SNPEFF_eff(snpeffdb_ch,merged_mutants_vcf.collect())
 	UTILS_publishRawSnpEff(vcfSnpeff_mutants_ch)
 
@@ -74,8 +78,6 @@ sample_ch = Channel
 	(noWT_ANNfilter_vcf_ch, snps_count_ch) = BCFTOOLS_snpeff_exclude(noWTvcf_ch)
 	UTILS_publishANNFilterSnpEff(noWT_ANNfilter_vcf_ch)
 	
-	// Keep only transitions SNPs
-	(noWT_ANNfilter_transitions_vcf_ch, snps_count_transitions_ch) = UTILS_filterTransitions(noWT_ANNfilter_vcf_ch)
 	
 	// Convert to matrix
 	VCFTOOLS_convertToTsvRaw(vcfSnpeff_mutants_ch)
@@ -94,8 +96,6 @@ sample_ch = Channel
 	BCFTOOLS_stats_noWT_ANNfilter(noWT_ANNfilter_vcf_ch)
 	BCFTOOLS_stats_noWT(noWTvcf_ch)
 	BCFTOOLS_stats_raw(vcfSnpeff_mutants_ch)
-
-	
 	
 }
 

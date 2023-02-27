@@ -1,7 +1,7 @@
 # NF-MUTDETECT2
 
 ```bash
-ne`tflow run $DIR/nf-mutdetect2/main.nf \
+nextflow run $DIR/nf-mutdetect2/main.nf \
 	--design $DIR/nf-mutdetect2/test.csv \
 	--outdir $DIR/nf-mutdetect2/test \
 	--refseq $DIR/reference/AtCol0-TAIR10.genome.fasta \

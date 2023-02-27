@@ -23,13 +23,14 @@ process UTILS_getSnpPositions {
 	input:
 	path(vcffiles)
 	val(genotype)
+	val(minNum)
 	
 	output:
 	path("${genotype}.snpPositions.tsv")
 	
 	script:
 	"""
-	zcat $vcffiles | (grep -v ^# || true) | cut -f1,2 | sort -u | sort -k1,1 -k2n,2 > ${genotype}.snpPositions.tsv
+	zcat $vcffiles | (grep -v ^# || true) | cut -f1,2 | sort -k1,1 -k2n,2 | uniq -c | sed -E 's/^ +//;s/ /\t/' | awk '\$1 >= ${minNum}' | cut -f2,3 > ${genotype}.snpPositions.tsv
 	"""
 }
 
@@ -84,30 +85,6 @@ process UTILS_rawaln {
 	ALN=`gzip -cd    ${samgz} | (grep -c -v ^@ || true)`
 	echo -e "${sample}\t${group}\t${genotype}\t\$ALN" > ${sample}.aln.raw
 	"""
-}
-
-process UTILS_filterTransitions {
-
-	publishDir("${params.outdir}/03_vcf/transitions");
-
-	errorStrategy { task.exitStatus in 0..1 ? 'ignore' : 'terminate' }
-	
-	input:
-	tuple val(sample), path(snpeff_fil_vcf),path (tbi)
-	
-	output:
-	tuple val(sample), path("${sample}.snpeff.ann_filter.transitions.vcf.gz"),path("${sample}.snpeff.ann_filter.transitions.vcf.gz.tbi")
-	path("${sample}.snpeff.ann_filter.transitions.count")
-	
-	
-	script:
-	"""
-	bgzip -cd  ${snpeff_fil_vcf} | awk -F '\t' '((\$4 == "A" && \$5 == "G") || (\$4 == "G" && \$5 == "A") || (\$4 == "C" && \$5 == "T") || (\$4 == "T" && \$5 == "C") || \$0 ~ /^#/ )' | bgzip -c > ${sample}.snpeff.ann_filter.transitions.vcf.gz
-	tabix ${sample}.snpeff.ann_filter.transitions.vcf.gz
-	AFTER=`bgzip -cd ${sample}.snpeff.ann_filter.transitions.vcf.gz | (grep -v '^#' || true) | wc -l`
-	echo -e "${sample}\t\$AFTER" > ${sample}.snpeff.ann_filter.transitions.count
-	"""
-	
 }
 
 process UTILS_summary{

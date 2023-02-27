@@ -8,16 +8,16 @@ process BCFTOOLS_snpeff_exclude {
 	tuple val(sample), path(snpeff_vcf), path(tbi)
 	
 	output:
-	tuple val(sample), path("${sample}.snpeff.ann_filter.vcf.gz"),path("${sample}.snpeff.ann_filter.vcf.gz.tbi")
-	path("${sample}.snpeff.ann_filter.count")
+	tuple val(sample), path("${sample}.noWT.ann_filter.vcf.gz"),path("${sample}.noWT.ann_filter.vcf.gz.tbi")
+	path("${sample}.noWT.ann_filter.count")
 	
 	script:
 	"""
 	BEFORE=`bgzip -cd ${snpeff_vcf} | (grep -v '^#' || true)  | wc -l`
-	bcftools  filter -i 'ANN[*] !~ "${params.snpeff_exclude_ann}"'  ${snpeff_vcf} | bgzip -c > ${sample}.snpeff.ann_filter.vcf.gz
-	tabix ${sample}.snpeff.ann_filter.vcf.gz
-	AFTER=`bgzip -cd ${sample}.snpeff.ann_filter.vcf.gz | (grep -v '^#' || true) | wc -l`
-	echo -e "${sample}\t\$BEFORE\t\$AFTER" > ${sample}.snpeff.ann_filter.count
+	bcftools  filter -i 'ANN[*] !~ "${params.snpeff_exclude_ann}"'  ${snpeff_vcf} | bgzip -c > ${sample}.noWT.ann_filter.vcf.gz
+	tabix ${sample}.noWT.ann_filter.vcf.gz
+	AFTER=`bgzip -cd ${sample}.noWT.ann_filter.vcf.gz | (grep -v '^#' || true) | wc -l`
+	echo -e "${sample}\t\$BEFORE\t\$AFTER" > ${sample}.noWT.ann_filter.count
 	"""
 
 }
@@ -46,26 +46,43 @@ process BCFTOOLS_getDeletions {
 process BCFTOOLS_merge {
 
 	label("process_medium")
-	
-	
-	input:
+ 
+ 	input:
 	path(cns_vcf)
 	val (prefix)
 	val (suffix)
 	
 	output:
-	tuple val(prefix), path("${prefix}.${suffix}.vcf.gz"), path("${prefix}.${suffix}.vcf.gz.tbi")
+	tuple val(prefix), path("${prefix}.${suffix}.raw.vcf.gz"), path("${prefix}.${suffix}.raw.vcf.gz.tbi")
 	
 	script:
 	"""
 	find . -name '*.cns.vcf.gz' > input.files
-	bcftools merge --threads ${task.cpus} --file-list input.files | bgzip -c > ${prefix}.${suffix}.vcf.gz
-	tabix ${prefix}.${suffix}.vcf.gz
+	bcftools merge --threads ${task.cpus} --file-list input.files | bgzip -c > ${prefix}.${suffix}.raw.vcf.gz
+	tabix ${prefix}.${suffix}.raw.vcf.gz
 	"""
 	
 	
 }
 
+process BCFTOOLS_norm {
+
+	label("process_medium")
+	
+	input:
+	tuple val(prefix), path(vcf), path(tbi)
+	path(reference)
+	val (prefix)
+	
+	output:
+	tuple val(prefix), path("${prefix}.norm.vcf.gz")
+	
+	script:
+	"""
+	bcftools norm --threads ${task.cpus} -m-any --check-ref x --fasta-ref ${reference} --output ${prefix}.norm.vcf.gz --output-type z ${vcf}  2> norm.log
+	"""
+	
+}
 
 process BCFTOOLS_stats {
 
