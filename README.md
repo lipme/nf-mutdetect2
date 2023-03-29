@@ -88,7 +88,8 @@ nextflow run $DIR/nf-mutdetect2/main.nf \
 ```tsv
 sample,group,fastq_1,fastq_2,genotype,readlen
 SEQ1,SEQ1,/path/to/SEQ1_R1.fastq.gz,/path/to/SEQ1_R2.fastq.gz,EMS,150
-SEQ2,SEQ2,/path/to/SEQ2_R1.fastq.gz,/path/to/SEQ2_R2.fastq.gz,WR,150
+SEQ2,SEQ2,/path/to/SEQ2_R1.fastq.gz,/path/to/SEQ2_R2.fastq.gz,WT,150
+SEQ2-2,SEQ2,/path/to/SEQ2-2_R1.fastq.gz,/path/to/SEQ2_2_R2.fastq.gz,WT,150
 ```
 
 NB: samples from same group will be merged during SNP calling step
