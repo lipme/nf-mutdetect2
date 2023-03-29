@@ -83,7 +83,7 @@ nextflow run $DIR/nf-mutdetect2/main.nf \
 
 ### MANDATORY
 
-- design : a TSV file describing your samples
+- design : a CSV file describing your samples
 
 ```tsv
 sample,group,fastq_1,fastq_2,genotype,readlen
