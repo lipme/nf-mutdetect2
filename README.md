@@ -85,7 +85,7 @@ nextflow run $DIR/nf-mutdetect2/main.nf \
 
 - design : a CSV file describing your samples
 
-```tsv
+```csv
 sample,group,fastq_1,fastq_2,genotype,readlen
 SEQ1,SEQ1,/path/to/SEQ1_R1.fastq.gz,/path/to/SEQ1_R2.fastq.gz,EMS,150
 SEQ2,SEQ2,/path/to/SEQ2_R1.fastq.gz,/path/to/SEQ2_R2.fastq.gz,WT,150
