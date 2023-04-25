@@ -38,7 +38,7 @@ process VARSCAN_mpileup2cns {
 	 --min-reads2 ${min_reads2} \
 	 --min-avg-qual ${avg_qual} \
 	 --min-var-freq ${var_freq} \
-	 --min-var-freq-for-hom ${var_freq_for_hom} \
+	 --min-freq-for-hom ${var_freq_for_hom} \
 	 --p-value ${pvalue}  | sed "s/Sample1/${sample}/" | bgzip -c > ${sample}.cns.vcf.gz
 	tabix ${sample}.cns.vcf.gz
 	"""
@@ -79,7 +79,7 @@ process VARSCAN_mpileup2snp {
 	 --min-reads2 ${min_reads2} \
 	 --min-avg-qual ${avg_qual} \
 	 --min-var-freq ${var_freq} \
-	 --min-var-freq-for-hom ${var_freq_for_hom} \
+	 --min-freq-for-hom ${var_freq_for_hom} \
 	 --p-value ${pvalue}  | sed "s/Sample1/${sample}/" | bgzip -c > ${sample}.snp.vcf.gz
 	"""
 }
