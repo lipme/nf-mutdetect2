@@ -58,7 +58,7 @@ process BCFTOOLS_merge {
 	script:
 	"""
 	find . -name '*.cns.vcf.gz' > input.files
-	bcftools merge --threads ${task.cpus} --file-list input.files | bgzip -c > ${prefix}.${suffix}.raw.vcf.gz
+	bcftools merge --threads ${task.cpus} --info-rules ADP:avg,HOM:sum,HET:sum,NC:sum,WT:sum --file-list input.files | bgzip -c > ${prefix}.${suffix}.raw.vcf.gz
 	tabix ${prefix}.${suffix}.raw.vcf.gz
 	"""
 	
