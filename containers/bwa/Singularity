@@ -28,15 +28,15 @@ IncludeCmd: yes
 
 %files
 debian.packages.run.list /opt/packages.run.list
-SOFTWARES.tsv /opt
+SOFTWARE.tsv /opt
 
 %post
 apt update && apt install -y $(cat /opt/packages.run.list)
 apt clean
 
 mkdir -p /opt/wrappers
-echo "#!/bin/bash\ncat /opt/SOFTWARES.tsv\n" > /opt/wrappers/softwares_info
-chmod +x /opt/wrappers/softwares_info
+echo "#!/bin/bash\ncat /opt/SOFTWARE.tsv\n" > /opt/wrappers/software_info
+chmod +x /opt/wrappers/software_info
 
 %environment
 export PATH=/venv/bin:/opt/wrappers:$PATH

@@ -1,0 +1,3 @@
+#software	version	source	license	citation
+bedtools	2.30.0	bioconda	GPLv2	Quinlan AR and Hall IM, 2010. BEDTools: a flexible suite of utilities for comparing genomic features. Bioinformatics. 26, 6, pp. 841–842.
+lipmutils	2022-09	http://lipm-svn.toulouse.inra.fr/svn/lipmutils/trunk/corelib	CeCILL-B	LIPME Bioinformatics Team, https://lipm-bioinfo.toulouse.inrae.fr
