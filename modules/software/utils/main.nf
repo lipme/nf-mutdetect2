@@ -24,13 +24,15 @@ process UTILS_getSnpPositions {
 	path(vcffiles)
 	val(genotype)
 	val(minNum)
+	val(maxNum)
 	
 	output:
 	path("${genotype}.snpPositions.tsv")
 	
 	script:
 	"""
-	zcat $vcffiles | (grep -v ^# || true) | cut -f1,2 | sort -k1,1 -k2n,2 | uniq -c | sed -E 's/^ +//;s/ /\t/' | awk '\$1 >= ${minNum}' | cut -f2,3 > ${genotype}.snpPositions.tsv
+	zcat $vcffiles | (grep -v ^# || true) | cut -f1,2,4,5 | sort -k1,1 -k2n,2 | uniq -c | sed -E 's/^ +//;s/ /\t/' > ${genotype}.snpPositions.count.tsv
+	cat  ${genotype}.snpPositions.count.tsv | awk '\$1 >= ${minNum} && \$1 <= ${maxNum}' | cut -f2,3 > ${genotype}.snpPositions.tsv
 	"""
 }
 
@@ -201,5 +203,29 @@ process UTILS_publishANNFilterSnpEff{
 	touch ${tbi}
 	"""
 }
+
+
+
+process UTILS_mpileupRecall {
+
+	tag "${group}"
+	maxForks 100
+	
+	input:
+	path(positions)
+	tuple val(group),path(mpileup),val(gt)
+	
+	
+	output:
+	tuple val(group),path("${group}.mpileup.cns.gz"),val(gt)
+
+	script:
+	"""
+	filter_mpileup.pl ${mpileup} ${positions} | gzip -c > ${group}.mpileup.cns.gz
+	"""
+
+}
+
+
 
 
