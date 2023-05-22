@@ -68,7 +68,7 @@ process SAMTOOLS_mpileup {
 	script:
 	gt = genotype.first()
 	"""
-	samtools merge --threads=${task.cpus} - ${bam} | samtools mpileup ${params.mpileup_parameters} -f ${refseq} - | bgzip -c > ${group}.mpileup.gz
+	samtools merge --threads=${task.cpus} - ${bam} | samtools mpileup -a ${params.mpileup_parameters} -f ${refseq} - | bgzip -c > ${group}.mpileup.gz
 	"""
 }
 
