@@ -57,7 +57,7 @@ process BCFTOOLS_merge {
 	
 	script:
 	"""
-	find . -name '*.cns.vcf.gz' > input.files
+	find . -name '*.cns.fixref.vcf.gz' > input.files
 	bcftools merge --threads ${task.cpus} --info-rules ADP:avg,HOM:sum,HET:sum,NC:sum,WT:sum --file-list input.files | bgzip -c > ${prefix}.${suffix}.raw.vcf.gz
 	tabix ${prefix}.${suffix}.raw.vcf.gz
 	"""
@@ -102,4 +102,43 @@ process BCFTOOLS_stats {
 	bcftools stats --threads ${task.cpus} --samples -  ${vcf} > ${vcf.baseName}.stats.tsv
 	grep -B2 ^PS ${vcf.baseName}.stats.tsv | cut -f3- > ${vcf.baseName}.stats.perSample.tsv
 	"""
+}
+
+// samtools mpileup output wrong ref based on uncovered positions (-a)
+process BCFTOOLS_fixref {
+	
+	input:
+	path(vcf)
+	path(reference)
+	
+	output:
+	path("*.fixref.vcf.gz*")
+	
+	script:
+	"""
+	name=`ls *vcf.gz | sed 's/.vcf.gz//'`
+	bcftools norm -c s -f ${reference} *.gz | bgzip -c > \$name.fixref.vcf.gz
+	tabix \$name.fixref.vcf.gz
+	"""
+	
+	
+	
+}
+
+
+process BCFTOOLS_convertToTsvBySample {
+
+	publishDir("${params.outdir}/05_tsv/bySample/")
+	
+	input:
+	tuple val(sample),path(vcffile),path(tbi)
+	
+	output:
+	path("${sample}.tsv.gz");
+	
+	script:
+	"""
+	to_tsv.pl ${vcffile} ${sample} | bgzip -c > ${sample}.tsv.gz
+	"""
+	
 }
